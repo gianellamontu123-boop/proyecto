@@ -17,9 +17,9 @@ router.post("/", async(req, res) => {
         const[resultado] = await pool.execute(
            `INSERT INTO animales (especie,raza,nombre,sexo,fecha_nacimiento,estado_actual) VALUES (?,?,?,?,?,?)`,
            [
-              nombre,
               especie,
               raza,
+              nombre,
               sexo,
               fecha_nacimiento,
               estado_actual
