@@ -1,11 +1,14 @@
 const express = require ("express");
 
-const pool = require("./bd/conexion")
+const pool = require("./bd/conexion");
+const routerAnimales = require("./rutas/animales");
 
 const app=express();
 const PORT =3000;
 
 app.use(express.json());
+
+app.use("/api/animales", routerAnimales)
 async function
 probarconexion(){
     try {
