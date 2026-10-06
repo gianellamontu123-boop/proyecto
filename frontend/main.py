@@ -1,6 +1,83 @@
 import tkinter as tk
 from tkinter import messagebox
-from frames.animales import crear_animales
+import requests
+from frames.inicio import crear_inicio
+
+def mostrar_inicio():
+
+    global contenedor
+
+    # Eliminar la pantalla de login
+    tarjeta.destroy()
+
+    # Crear contenedor para la pantalla principal
+    contenedor = tk.Frame(
+        ventana,
+        bg="#eef1f5"
+    )
+
+    contenedor.pack(
+        fill="both",
+        expand=True
+    )
+
+    # Crear la pantalla de inicio
+    frame_inicio = crear_inicio(contenedor)
+
+    frame_inicio.pack(
+        fill="both",
+        expand=True
+    )
+
+def iniciar_sesion():
+
+    usuario = entrada_correo.get()
+    contraseña = entrada_password.get()
+
+    if usuario == "" or contraseña == "":
+        messagebox.showwarning(
+            "Campos vacíos",
+            "Ingrese usuario y contraseña."
+        )
+        return
+
+    datos = {
+        "nombre_usuario": usuario,
+        "contrasena": contraseña
+    }
+
+    try:
+        respuesta = requests.post(
+            "http://localhost:3000/api/login",
+            json=datos
+        )
+
+        if respuesta.status_code == 200:
+            messagebox.showinfo(
+                "Inicio de sesión",
+                "¡Bienvenido!"
+            )
+            mostrar_inicio()
+
+        elif respuesta.status_code == 401:
+            messagebox.showerror(
+                "Error",
+                "Usuario o contraseña incorrectos."
+            )
+
+        else:
+            messagebox.showerror(
+                "Error",
+                "Ocurrió un error al iniciar sesión."
+            )
+
+    except requests.exceptions.RequestException:
+        messagebox.showerror(
+            "Error",
+            "No se pudo conectar con el servidor."
+        )
+
+
 
 
 # =========================
@@ -26,15 +103,7 @@ GRIS = "#777777"
 BORDE = "#D5DED5"
 
 
-# =========================
-# MOSTRAR ANIMALES
-# =========================
-def mostrar_animales():
-    for widget in ventana.winfo_children():
-        widget.destroy()
 
-    frame = crear_animales(ventana)
-    frame.pack(fill="both", expand=True)
 
 
 # =========================
@@ -47,24 +116,6 @@ def mostrar_password():
     else:
         entrada_password.config(show="")
         boton_ojo.config(text="○")
-
-
-# =========================
-# INICIAR SESIÓN
-# =========================
-def iniciar_sesion():
-    correo = entrada_correo.get()
-    password = entrada_password.get()
-
-    if correo == "" or password == "":
-        messagebox.showwarning(
-            "Datos incompletos",
-            "Por favor, completa el correo y la contraseña."
-        )
-        return
-
-    # Acá después podés agregar la validación real
-    mostrar_animales()
 
 
 # =========================
