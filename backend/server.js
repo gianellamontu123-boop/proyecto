@@ -7,13 +7,12 @@ const ADOPCIONESRouter = require("./rutas/adopciones")
 const app=express();
 const PORT =3000;
 
-app.use(express.json());
+app.use(express.json()); 
 
 app.use("/api/animales", routerAnimales)
 app.use("/api/login", loginRouter)
 app.use("/api/adopciones", ADOPCIONESRouter)
-async function
-probarconexion(){
+async function probarconexion(){
     try {
         await pool.query("SELECT 1");
         console.log("conexion exitosa")
