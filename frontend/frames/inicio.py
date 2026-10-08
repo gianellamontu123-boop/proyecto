@@ -1,5 +1,5 @@
 import tkinter as tk
-from frames.adopciones import crear_adopciones
+from frames.donaciones import crear_donaciones 
 
 # ==============================
 # COLORES
@@ -30,15 +30,15 @@ def crear_inicio(parent):
         bg=BEIGE
     )
 
-    def abrir_adopciones():
+    def abrir_donaciones():
         vent = tk.Toplevel(frame)
         vent.geometry("1000x650")
-        frame_adopciones=crear_adopciones(vent)
+        frame_adopciones=crear_donaciones(vent)
         frame_adopciones.pack(
             fill="both",
             expand=True
         )
-    abrir_adopciones()
+    abrir_donaciones()
     # ==========================================
     # BARRA LATERAL
     # ==========================================

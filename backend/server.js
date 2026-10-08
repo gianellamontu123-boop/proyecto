@@ -3,6 +3,7 @@ const pool = require("./bd/conexion");
 const routerAnimales = require("./rutas/animales");
 const loginRouter = require("./rutas/login")
 const ADOPCIONESRouter = require("./rutas/adopciones")
+const donacionesRouter = require("./rutas/donaciones")
 
 const app=express();
 const PORT =3000;
@@ -12,6 +13,8 @@ app.use(express.json());
 app.use("/api/animales", routerAnimales)
 app.use("/api/login", loginRouter)
 app.use("/api/adopciones", ADOPCIONESRouter)
+app.use("/api/donaciones", donacionesRouter)
+
 async function probarconexion(){
     try {
         await pool.query("SELECT 1");
