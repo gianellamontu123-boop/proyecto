@@ -9,6 +9,7 @@ const router = express.Router();
 router.post('/', async (req, res) => {
     const {
         nombre,
+        id_persona,
         rol,
         turno,
         dias,
@@ -19,9 +20,9 @@ router.post('/', async (req, res) => {
     try {
         await pool.execute(
             `INSERT INTO voluntarios
-            (nombre, rol, turno, dias, fecha_ingreso, estado)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-            [nombre, rol, turno, dias, fecha_ingreso, estado || 'Activo']
+            (nombre, id_persona, rol, turno, dias, fecha_ingreso, estado)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [nombre, id_persona, rol, turno, dias, fecha_ingreso, estado || 'Activo']
         );
 
         return res.status(201).json({
@@ -94,6 +95,7 @@ router.put('/:id', async (req, res) => {
 
     const {
         nombre,
+        id_persona,
         rol,
         turno,
         dias,
@@ -105,6 +107,7 @@ router.put('/:id', async (req, res) => {
         const [resultado] = await pool.execute(
             `UPDATE voluntarios
              SET nombre = ?,
+                 id_persona = ?,
                  rol = ?,
                  turno = ?,
                  dias = ?,
@@ -113,6 +116,7 @@ router.put('/:id', async (req, res) => {
              WHERE id_voluntario = ?`,
             [
                 nombre,
+                id_persona,
                 rol,
                 turno,
                 dias,
