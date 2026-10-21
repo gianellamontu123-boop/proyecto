@@ -12,11 +12,11 @@ BASE_URL = "http://localhost:3000"
 
 # Si en tu app montaste las rutas así:
 # app.use('/adopciones', adopcionesRouter);
-ADOPCIONES_URL = f"{BASE_URL}/adopciones"
+ADOPCIONES_URL = f"{BASE_URL}/api/adopciones"
 
 # Para poder mostrar nombre del animal y del adoptante
-ANIMALES_URL = f"{BASE_URL}/animales"
-PERSONAS_URL = f"{BASE_URL}/personas"
+ANIMALES_URL = f"{BASE_URL}/api/animales"
+PERSONAS_URL = f"{BASE_URL}/api/personas"
 
 
 # ==========================================================
@@ -48,18 +48,18 @@ def crear_adopciones(parent):
     # COLORES
     # ------------------------------------------------------
 
-    VERDE = "#4F8060"
-    VERDE_CLARO = "#E7F3EB"
-    VERDE_OSCURO = "#28583A"
+    VERDE = "#4F7F5F"
+    VERDE_CLARO = "#EAF4ED"
+    VERDE_OSCURO = "#396348"
 
-    NARANJA = "#D97706"
+    NARANJA = "#F27B21"
     NARANJA_CLARO = "#FFF3E5"
 
-    ROJO = "#C92A2A"
+    ROJO = "#C95C5C"
     ROJO_CLARO = "#FDEAEA"
 
-    GRIS = "#6B7280"
-    GRIS_CLARO = "#F1F3F0"
+    GRIS = "#777777"
+    GRIS_CLARO = "#E5E5E0"
 
     BLANCO = "#FFFFFF"
 
@@ -906,6 +906,8 @@ def crear_adopciones(parent):
 
     def recargar():
 
+        nonlocal adopciones_data
+
         obtener_animales()
         obtener_personas()
 
@@ -1535,6 +1537,45 @@ def crear_adopciones(parent):
             )
 
 
+    def obtener_adopcion_seleccionada():
+
+        seleccion = tabla.selection()
+
+        if not seleccion:
+            messagebox.showwarning(
+                "Seleccionar adopciÃ³n",
+                "SeleccionÃ¡ una adopciÃ³n de la tabla."
+            )
+            return None
+
+        valores = tabla.item(seleccion[0], "values")
+        id_adopcion = valores[0]
+
+        return next(
+            (
+                adopcion for adopcion in adopciones_data
+                if str(adopcion.get("id_adopcion")) == str(id_adopcion)
+            ),
+            None
+        )
+
+
+    def editar_seleccionada():
+
+        adopcion = obtener_adopcion_seleccionada()
+
+        if adopcion:
+            ventana_adopcion(adopcion)
+
+
+    def eliminar_seleccionada():
+
+        adopcion = obtener_adopcion_seleccionada()
+
+        if adopcion:
+            eliminar_adopcion(adopcion)
+
+
     # ------------------------------------------------------
     # BOTONES DE ACCIONES
     # ------------------------------------------------------
@@ -1627,6 +1668,40 @@ def crear_adopciones(parent):
         "<Button-1>",
         accion_tabla
     )
+
+
+    acciones = tk.Frame(frame, bg="#F7F7F3")
+    acciones.pack(fill="x", padx=25, pady=(0, 15))
+
+    tk.Button(
+        acciones,
+        text="Editar seleccionada",
+        font=("Segoe UI", 10, "bold"),
+        bg=VERDE,
+        fg="white",
+        activebackground=VERDE_OSCURO,
+        activeforeground="white",
+        relief="flat",
+        cursor="hand2",
+        padx=14,
+        pady=8,
+        command=editar_seleccionada
+    ).pack(side="left", padx=(0, 8))
+
+    tk.Button(
+        acciones,
+        text="Eliminar seleccionada",
+        font=("Segoe UI", 10, "bold"),
+        bg=ROJO,
+        fg="white",
+        activebackground="#9F1D1D",
+        activeforeground="white",
+        relief="flat",
+        cursor="hand2",
+        padx=14,
+        pady=8,
+        command=eliminar_seleccionada
+    ).pack(side="left")
 
 
     # ------------------------------------------------------

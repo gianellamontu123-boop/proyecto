@@ -6,6 +6,7 @@ from frames.animales import crear_animales
 from frames.adopciones import crear_adopciones
 from frames.donaciones import crear_donaciones
 from frames.voluntarios import voluntarios
+from frames.personas import crear_personas
 
 
 # ==========================================
@@ -113,6 +114,7 @@ def crear_inicio(parent):
         "Adopciones": crear_adopciones,
         "Donaciones": crear_donaciones,
         "Voluntarios": voluntarios,
+        "Personas": crear_personas,
         "Reportes": None,
         "Ayuda": None
     }
@@ -124,7 +126,8 @@ def crear_inicio(parent):
     # ==========================================
     def mostrar_frame(nombre):
 
-        # Borrar solamente la vista central.
+        # Borrar solamente la vista central. El menú lateral vive fuera de
+        # `area_vistas`, por lo que nunca se destruye al cambiar de sección.
         for widget in area_vistas.winfo_children():
             widget.destroy()
 
@@ -156,11 +159,18 @@ def crear_inicio(parent):
             ).pack(expand=True)
             return
 
-        # Crear la vista dentro del área central.
-        try:
-            nuevo_frame = funcion(area_vistas)
+        # Cada pantalla recibe su propio contenedor. Esto permite trabajar
+        # con vistas que devuelven un Frame y con vistas que dibujan
+        # directamente sobre el padre (como Voluntarios).
+        contenedor_vista = tk.Frame(area_vistas, bg=FONDO)
+        contenedor_vista.pack(fill="both", expand=True)
 
-            if nuevo_frame is not None:
+        try:
+            nuevo_frame = funcion(contenedor_vista)
+
+            # Algunas vistas ya hacen `pack()` internamente. Solo se empaqueta
+            # aquí cuando la vista devuelve un Frame todavía no administrado.
+            if nuevo_frame is not None and not nuevo_frame.winfo_manager():
                 nuevo_frame.pack(
                     fill="both",
                     expand=True
@@ -184,6 +194,8 @@ def crear_inicio(parent):
         ("▤", "Reportes"),
         ("?", "Ayuda")
     ]
+
+    opciones.insert(1, ("P", "Personas"))
 
     for icono, nombre in opciones:
 
