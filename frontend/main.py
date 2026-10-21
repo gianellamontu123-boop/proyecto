@@ -85,7 +85,7 @@ def iniciar_sesion():
 # =========================
 ventana = tk.Tk()
 ventana.title("ARCA - Refugio de animales")
-ventana.geometry("800x650")
+ventana.geometry("1000x650")
 ventana.configure(bg="#F3F1E9")
 ventana.resizable(False, False)
 
