@@ -1,13 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import requests
+from datetime import datetime
 
 
 # ==========================================
 # CONFIGURACIÓN
 # ==========================================
 
-URL_API = "http://localhost:3000/donaciones"
+URL_API = "http://localhost:3000/api/donaciones"
+PERSONAS_URL = "http://localhost:3000/api/personas"
 
 
 # ==========================================
@@ -20,14 +22,14 @@ def crear_donaciones(parent):
     # COLORES
     # --------------------------------------
 
-    VERDE = "#4F7F5D"
-    VERDE_CLARO = "#E8F4EC"
-    VERDE_TEXTO = "#28784A"
-    FONDO = "#F8F7F2"
+    VERDE = "#4F7F5F"
+    VERDE_CLARO = "#EAF4ED"
+    VERDE_TEXTO = "#396348"
+    FONDO = "#F5F3ED"
     BLANCO = "#FFFFFF"
-    TEXTO = "#26332D"
-    GRIS = "#6D7973"
-    NARANJA = "#F28C28"
+    TEXTO = "#222222"
+    GRIS = "#777777"
+    NARANJA = "#F27B21"
     MORADO = "#6851C9"
 
     # --------------------------------------
@@ -114,6 +116,9 @@ def crear_donaciones(parent):
         fg="#D6E4D9",
         font=("Arial", 9)
     ).pack(anchor="w")
+
+    # La navegación la gestiona el menú principal de inicio.py.
+    menu.destroy()
 
     # ======================================
     # CONTENIDO
@@ -280,6 +285,55 @@ def crear_donaciones(parent):
 
     buscar_entry.insert(0, "")
 
+    def id_donacion_seleccionada():
+        seleccion = tabla.selection()
+        if not seleccion:
+            messagebox.showwarning(
+                "Seleccionar donaciÃ³n",
+                "SeleccionÃ¡ una donaciÃ³n de la tabla."
+            )
+            return None
+
+        return tabla.item(seleccion[0], "values")[0]
+
+    def editar_seleccionada():
+        id_donacion = id_donacion_seleccionada()
+        if id_donacion:
+            editar_donacion(id_donacion)
+
+    def eliminar_seleccionada():
+        id_donacion = id_donacion_seleccionada()
+        if id_donacion:
+            eliminar_donacion(id_donacion)
+
+    tk.Button(
+        buscar_frame,
+        text="Editar seleccionada",
+        font=("Arial", 9, "bold"),
+        bg=VERDE,
+        fg="white",
+        activebackground="#396348",
+        relief="flat",
+        cursor="hand2",
+        padx=10,
+        pady=8,
+        command=editar_seleccionada
+    ).pack(side="left", padx=5)
+
+    tk.Button(
+        buscar_frame,
+        text="Eliminar seleccionada",
+        font=("Arial", 9, "bold"),
+        bg=NARANJA,
+        fg="white",
+        activebackground="#C45F16",
+        relief="flat",
+        cursor="hand2",
+        padx=10,
+        pady=8,
+        command=eliminar_seleccionada
+    ).pack(side="left", padx=5)
+
     # ======================================
     # TABLA
     # ======================================
@@ -346,6 +400,69 @@ def crear_donaciones(parent):
     # ======================================
 
     donaciones = []
+    personas = []
+
+    def convertir_fecha_para_api(valor):
+        try:
+            return datetime.strptime(
+                valor.strip(),
+                "%d/%m/%Y"
+            ).strftime("%Y-%m-%d")
+        except ValueError:
+            return None
+
+    def convertir_fecha_desde_api(valor):
+        try:
+            return datetime.strptime(
+                str(valor)[:10],
+                "%Y-%m-%d"
+            ).strftime("%d/%m/%Y")
+        except ValueError:
+            return str(valor)
+
+    def cargar_personas():
+        nonlocal personas
+
+        try:
+            respuesta = requests.get(PERSONAS_URL, timeout=5)
+            respuesta.raise_for_status()
+            personas = respuesta.json()
+        except requests.RequestException as error:
+            messagebox.showerror(
+                "Error de conexiÃ³n",
+                f"No se pudieron cargar las personas.\n\n{error}"
+            )
+            personas = []
+
+    def opciones_personas():
+        return [
+            f"{persona.get('id_persona')} - "
+            f"{persona.get('nombre', '')} {persona.get('apellido', '')}".strip()
+            for persona in personas
+        ]
+
+    def id_persona_seleccionada(valor):
+        try:
+            return int(valor.split(" - ", 1)[0])
+        except (AttributeError, ValueError, IndexError):
+            return None
+
+    def nombre_persona(id_persona):
+        persona = next(
+            (
+                persona for persona in personas
+                if str(persona.get("id_persona")) == str(id_persona)
+            ),
+            None
+        )
+
+        if not persona:
+            return f"Persona {id_persona}"
+
+        return (
+            f"{persona.get('nombre', '')} "
+            f"{persona.get('apellido', '')}"
+        ).strip()
 
     def cargar_donaciones():
 
@@ -404,7 +521,7 @@ def crear_donaciones(parent):
             id_persona = donacion.get("id_persona", "")
 
             # Convertir fecha si viene con formato datetime
-            fecha = str(fecha)[:10]
+            fecha = convertir_fecha_desde_api(fecha)
 
             # Buscar
             texto = (
@@ -428,7 +545,7 @@ def crear_donaciones(parent):
                 "end",
                 values=(
                     id_donacion,
-                    "Persona " + str(id_persona),
+                    nombre_persona(id_persona),
                     tipo,
                     detalle,
                     fecha,
@@ -476,7 +593,7 @@ def crear_donaciones(parent):
         # Fecha
         tk.Label(
             formulario,
-            text="Fecha:",
+            text="Fecha (dd/mm/aaaa):",
             bg=FONDO,
             fg=TEXTO
         ).pack(anchor="w")
@@ -524,25 +641,38 @@ def crear_donaciones(parent):
         # Persona
         tk.Label(
             formulario,
-            text="ID de persona:",
+            text="Persona:",
             bg=FONDO,
             fg=TEXTO
         ).pack(anchor="w")
 
-        persona_entry = tk.Entry(
+        persona_combo = ttk.Combobox(
             formulario,
+            values=opciones_personas(),
+            state="readonly",
             font=("Arial", 10)
         )
-        persona_entry.pack(fill="x", pady=(3, 15))
+        persona_combo.pack(fill="x", pady=(3, 15))
 
         def guardar():
 
-            fecha = fecha_entry.get()
+            fecha = convertir_fecha_para_api(
+                fecha_entry.get()
+            )
             tipo = tipo_combo.get()
             detalle = detalle_entry.get()
-            id_persona = persona_entry.get()
+            id_persona = id_persona_seleccionada(
+                persona_combo.get()
+            )
 
-            if not fecha or not tipo or not detalle or not id_persona:
+            if not fecha:
+                messagebox.showwarning(
+                    "Fecha invÃ¡lida",
+                    "IngresÃ¡ la fecha con el formato dd/mm/aaaa."
+                )
+                return
+
+            if not tipo or not detalle or not id_persona:
 
                 messagebox.showwarning(
                     "Campos incompletos",
@@ -653,14 +783,17 @@ def crear_donaciones(parent):
         # Fecha
         tk.Label(
             formulario,
-            text="Fecha:",
+            text="Fecha (dd/mm/aaaa):",
             bg=FONDO,
             fg=TEXTO
         ).pack(anchor="w")
 
         fecha_entry = tk.Entry(formulario)
         fecha_entry.pack(fill="x", pady=(3, 12))
-        fecha_entry.insert(0, str(donacion.get("fecha", ""))[:10])
+        fecha_entry.insert(
+            0,
+            convertir_fecha_desde_api(donacion.get("fecha", ""))
+        )
 
         # Tipo
         tk.Label(
@@ -701,25 +834,50 @@ def crear_donaciones(parent):
         # Persona
         tk.Label(
             formulario,
-            text="ID de persona:",
+            text="Persona:",
             bg=FONDO,
             fg=TEXTO
         ).pack(anchor="w")
 
-        persona_entry = tk.Entry(formulario)
-        persona_entry.pack(fill="x", pady=(3, 15))
-        persona_entry.insert(
-            0,
-            donacion.get("id_persona", "")
+        persona_combo = ttk.Combobox(
+            formulario,
+            values=opciones_personas(),
+            state="readonly",
+            font=("Arial", 10)
+        )
+        persona_combo.pack(fill="x", pady=(3, 15))
+        persona_combo.set(
+            next(
+                (
+                    opcion for opcion in opciones_personas()
+                    if opcion.startswith(
+                        f"{donacion.get('id_persona', '')} -"
+                    )
+                ),
+                ""
+            )
         )
 
         def actualizar():
 
+            fecha = convertir_fecha_para_api(
+                fecha_entry.get()
+            )
+
+            if not fecha:
+                messagebox.showwarning(
+                    "Fecha invÃ¡lida",
+                    "IngresÃ¡ la fecha con el formato dd/mm/aaaa."
+                )
+                return
+
             datos = {
-                "fecha": fecha_entry.get(),
+                "fecha": fecha,
                 "tipo": tipo_combo.get(),
                 "detalle": detalle_entry.get(),
-                "id_persona": persona_entry.get()
+                "id_persona": id_persona_seleccionada(
+                    persona_combo.get()
+                )
             }
 
             if not all(datos.values()):
@@ -900,6 +1058,7 @@ def crear_donaciones(parent):
     # CARGAR DATOS AL ABRIR
     # ======================================
 
+    cargar_personas()
     cargar_donaciones()
 
     return frame

@@ -4,6 +4,9 @@ const routerAnimales = require("./rutas/animales");
 const loginRouter = require("./rutas/login")
 const ADOPCIONESRouter = require("./rutas/adopciones")
 const donacionesRouter = require("./rutas/donaciones")
+const voluntariosRouter = require("./rutas/voluntarios")
+const personasRouter = require("./rutas/personas")
+
 
 const app=express();
 const PORT =3000;
@@ -14,6 +17,8 @@ app.use("/api/animales", routerAnimales)
 app.use("/api/login", loginRouter)
 app.use("/api/adopciones", ADOPCIONESRouter)
 app.use("/api/donaciones", donacionesRouter)
+app.use("/api/voluntarios", voluntariosRouter)
+app.use("/api/personas", personasRouter)
 
 async function probarconexion(){
     try {

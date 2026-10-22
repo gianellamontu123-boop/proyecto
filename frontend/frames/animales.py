@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import requests
+from datetime import datetime
 
 
 # ============================================================
@@ -20,22 +21,22 @@ def crear_animales(parent):
     # COLORES
     # --------------------------------------------------------
 
-    AZUL_OSCURO = "#0B1F36"
-    AZUL = "#1683E8"
-    AZUL_CLARO = "#EAF4FF"
+    FONDO = "#F5F3ED"
+    VERDE_OSCURO = "#396348"
+    VERDE = "#4F7F5F"
+    VERDE_CLARO = "#EAF4ED"
     BLANCO = "#FFFFFF"
-    GRIS = "#6B7280"
-    GRIS_CLARO = "#F5F7FA"
-    BORDE = "#D7DEE8"
-    VERDE = "#22C55E"
+    GRIS = "#777777"
+    GRIS_CLARO = "#E5E5E0"
+    BORDE = "#E0E0D8"
     ROJO = "#EF4444"
-    NEGRO = "#172033"
+    NEGRO = "#222222"
 
     # --------------------------------------------------------
     # FRAME PRINCIPAL
     # --------------------------------------------------------
 
-    frame = tk.Frame(parent, bg=BLANCO)
+    frame = tk.Frame(parent, bg=FONDO)
     frame.pack(fill="both", expand=True)
 
     # ========================================================
@@ -44,7 +45,7 @@ def crear_animales(parent):
 
     sidebar = tk.Frame(
         frame,
-        bg=AZUL_OSCURO,
+        bg=VERDE_OSCURO,
         width=190
     )
 
@@ -52,14 +53,14 @@ def crear_animales(parent):
     sidebar.pack_propagate(False)
 
     # Logo
-    logo_frame = tk.Frame(sidebar, bg=AZUL_OSCURO)
+    logo_frame = tk.Frame(sidebar, bg=VERDE_OSCURO)
     logo_frame.pack(fill="x", pady=(25, 35))
 
     tk.Label(
         logo_frame,
         text="🐾",
         font=("Arial", 25),
-        bg=AZUL_OSCURO,
+        bg=VERDE_OSCURO,
         fg="#1683E8"
     ).pack(side="left", padx=(20, 5))
 
@@ -67,14 +68,14 @@ def crear_animales(parent):
         logo_frame,
         text="PetManager",
         font=("Arial", 16, "bold"),
-        bg=AZUL_OSCURO,
+        bg=VERDE_OSCURO,
         fg=BLANCO
     ).pack(side="left")
 
     # Botones del menú
     def boton_menu(texto, activo=False):
 
-        color = "#24496F" if activo else AZUL_OSCURO
+        color = VERDE_OSCURO
 
         boton = tk.Button(
             sidebar,
@@ -102,14 +103,14 @@ def crear_animales(parent):
     boton_menu("⚙   Configuración")
 
     # Usuario
-    usuario = tk.Frame(sidebar, bg=AZUL_OSCURO)
+    usuario = tk.Frame(sidebar, bg=VERDE_OSCURO)
     usuario.pack(side="bottom", fill="x", pady=20)
 
     tk.Label(
         usuario,
         text="●",
         font=("Arial", 18),
-        bg=AZUL_OSCURO,
+        bg=VERDE_OSCURO,
         fg="#A9C7E8"
     ).pack(side="left", padx=(20, 8))
 
@@ -117,16 +118,20 @@ def crear_animales(parent):
         usuario,
         text="Sarah Jenkins",
         font=("Arial", 10, "bold"),
-        bg=AZUL_OSCURO,
+        bg=VERDE_OSCURO,
         fg=BLANCO
     ).pack(side="left")
+
+    # La navegación pertenece al menú principal de inicio.py. Esta vista no
+    # debe crear un segundo menú lateral.
+    sidebar.destroy()
 
     # ========================================================
     # CONTENIDO PRINCIPAL
     # ========================================================
 
-    contenido = tk.Frame(frame, bg=GRIS_CLARO)
-    contenido.pack(side="left", fill="both", expand=True)
+    contenido = tk.Frame(frame, bg=FONDO)
+    contenido.pack(fill="both", expand=True)
 
     # --------------------------------------------------------
     # CABECERA
@@ -134,46 +139,46 @@ def crear_animales(parent):
 
     header = tk.Frame(
         contenido,
-        bg=GRIS_CLARO,
-        height=90
+        bg=BLANCO,
+        height=58
     )
 
-    header.pack(fill="x", padx=25, pady=(20, 5))
+    header.pack(fill="x")
     header.pack_propagate(False)
 
     titulo = tk.Label(
         header,
         text="Registros de Animales",
-        font=("Arial", 24, "bold"),
-        bg=GRIS_CLARO,
+        font=("Arial", 15, "bold"),
+        bg=BLANCO,
         fg=NEGRO
     )
 
-    titulo.pack(side="left", anchor="nw")
+    titulo.pack(side="left", padx=25)
 
     # Botón agregar
     boton_agregar = tk.Button(
         header,
-        text="+  Agregar Nuevo Animal",
+        text="+  Agregar animal",
         font=("Arial", 11, "bold"),
-        bg=AZUL,
+        bg=VERDE,
         fg=BLANCO,
-        activebackground="#0D6FC5",
+        activebackground=VERDE_OSCURO,
         activeforeground=BLANCO,
         relief="flat",
-        padx=18,
-        pady=10,
+        padx=15,
+        pady=8,
         cursor="hand2"
     )
 
-    boton_agregar.pack(side="right", pady=5)
+    boton_agregar.pack(side="right", padx=20, pady=9)
 
     # ========================================================
     # ZONA CENTRAL
     # ========================================================
 
-    centro = tk.Frame(contenido, bg=GRIS_CLARO)
-    centro.pack(fill="both", expand=True, padx=25, pady=5)
+    centro = tk.Frame(contenido, bg=FONDO)
+    centro.pack(fill="both", expand=True, padx=22, pady=22)
 
     # ========================================================
     # PANEL TABLA
@@ -243,7 +248,7 @@ def crear_animales(parent):
         text="Filtrar por: Todos (Tabla)",
         font=("Arial", 9, "underline"),
         bg=BLANCO,
-        fg=AZUL,
+        fg=VERDE,
         anchor="w"
     ).pack(fill="x", padx=15)
 
@@ -318,7 +323,7 @@ def crear_animales(parent):
 
     estilo.configure(
         "Treeview.Heading",
-        background="#F3F6FA",
+        background=FONDO,
         foreground=NEGRO,
         font=("Arial", 9, "bold"),
         padding=8
@@ -327,7 +332,7 @@ def crear_animales(parent):
     estilo.map(
         "Treeview",
         background=[
-            ("selected", "#DCEEFF")
+            ("selected", VERDE_CLARO)
         ],
         foreground=[
             ("selected", NEGRO)
@@ -479,7 +484,7 @@ def crear_animales(parent):
     ).pack(side="left")
 
     crear_campo(
-        "Fecha de Nacimiento",
+        "Fecha de Nacimiento (dd/mm/aaaa)",
         fecha_var
     )
 
@@ -532,7 +537,7 @@ def crear_animales(parent):
         formulario,
         textvariable=id_actual,
         font=("Arial", 10),
-        bg="#F3F4F6",
+        bg=VERDE_CLARO,
         fg=GRIS,
         anchor="w",
         padx=10
@@ -556,35 +561,91 @@ def crear_animales(parent):
         pady=20
     )
 
+    botones.columnconfigure(0, weight=1)
+    botones.columnconfigure(1, weight=1)
+
     boton_cancelar = tk.Button(
         botones,
         text="Cancelar",
         font=("Arial", 10, "bold"),
-        bg="#6B7280",
+        bg=GRIS,
         fg=BLANCO,
         relief="flat",
         padx=18,
         pady=9
     )
 
-    boton_cancelar.pack(side="left")
+    boton_cancelar.grid(
+        row=0,
+        column=0,
+        sticky="ew",
+        padx=(0, 4)
+    )
+
+    boton_eliminar = tk.Button(
+        botones,
+        text="Eliminar",
+        font=("Arial", 10, "bold"),
+        bg="#C95C5C",
+        fg=BLANCO,
+        activebackground="#A94444",
+        activeforeground=BLANCO,
+        relief="flat",
+        padx=14,
+        pady=9,
+        cursor="hand2"
+    )
+
+    boton_eliminar.grid(
+        row=0,
+        column=1,
+        sticky="ew",
+        padx=(4, 0)
+    )
 
     boton_guardar = tk.Button(
         botones,
         text="Guardar Registro",
         font=("Arial", 10, "bold"),
-        bg=AZUL,
+        bg=VERDE,
         fg=BLANCO,
         relief="flat",
         padx=15,
         pady=9
     )
 
-    boton_guardar.pack(side="right")
+    boton_guardar.grid(
+        row=1,
+        column=0,
+        columnspan=2,
+        sticky="ew",
+        pady=(8, 0)
+    )
 
     # ========================================================
     # FUNCIONES CRUD
     # ========================================================
+
+    def convertir_fecha_para_api(valor):
+
+        try:
+            return datetime.strptime(
+                valor.strip(),
+                "%d/%m/%Y"
+            ).strftime("%Y-%m-%d")
+        except ValueError:
+            return None
+
+
+    def convertir_fecha_desde_api(valor):
+
+        try:
+            return datetime.strptime(
+                str(valor)[:10],
+                "%Y-%m-%d"
+            ).strftime("%d/%m/%Y")
+        except ValueError:
+            return str(valor)
 
     def limpiar_formulario():
 
@@ -628,7 +689,9 @@ def crear_animales(parent):
                         animal.get("especie", ""),
                         animal.get("raza", ""),
                         animal.get("sexo", ""),
-                        animal.get("fecha_nacimiento", ""),
+                        convertir_fecha_desde_api(
+                            animal.get("fecha_nacimiento", "")
+                        ),
                         animal.get("estado_actual", "")
                     )
                 )
@@ -658,12 +721,23 @@ def crear_animales(parent):
 
     def agregar_animal():
 
+        fecha_nacimiento = convertir_fecha_para_api(
+            fecha_var.get()
+        )
+
+        if not fecha_nacimiento:
+            messagebox.showwarning(
+                "Fecha invÃ¡lida",
+                "IngresÃ¡ la fecha con el formato dd/mm/aaaa."
+            )
+            return
+
         datos = {
             "nombre": nombre_var.get(),
             "especie": especie_var.get(),
             "raza": raza_var.get(),
             "sexo": sexo_var.get(),
-            "fecha_nacimiento": fecha_var.get(),
+            "fecha_nacimiento": fecha_nacimiento,
             "estado_actual": estado_var.get()
         }
 
@@ -748,7 +822,7 @@ def crear_animales(parent):
 
             # MySQL puede devolver la fecha como string
             if fecha:
-                fecha = str(fecha)[:10]
+                fecha = convertir_fecha_desde_api(fecha)
 
             fecha_var.set(fecha)
 
@@ -787,12 +861,23 @@ def crear_animales(parent):
 
             return
 
+        fecha_nacimiento = convertir_fecha_para_api(
+            fecha_var.get()
+        )
+
+        if not fecha_nacimiento:
+            messagebox.showwarning(
+                "Fecha invÃ¡lida",
+                "IngresÃ¡ la fecha con el formato dd/mm/aaaa."
+            )
+            return
+
         datos = {
             "nombre": nombre_var.get(),
             "especie": especie_var.get(),
             "raza": raza_var.get(),
             "sexo": sexo_var.get(),
-            "fecha_nacimiento": fecha_var.get(),
+            "fecha_nacimiento": fecha_nacimiento,
             "estado_actual": estado_var.get()
         }
 
@@ -931,6 +1016,10 @@ def crear_animales(parent):
 
     boton_guardar.config(
         command=guardar
+    )
+
+    boton_eliminar.config(
+        command=eliminar_animal
     )
 
     boton_agregar.config(

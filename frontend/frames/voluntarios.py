@@ -7,7 +7,8 @@ from collections import Counter
 # ==========================================
 # CONFIGURACIÓN DE LA API
 # ==========================================
-API_URL = "http://localhost:3000/voluntarios"
+API_URL = "http://localhost:3000/api/voluntarios"
+PERSONAS_URL = "http://localhost:3000/api/personas"
 
 # ==========================================
 # INTERFAZ DE VOLUNTARIOS
@@ -15,13 +16,13 @@ API_URL = "http://localhost:3000/voluntarios"
 def voluntarios(parent):
 
     # Colores de la interfaz
-    VERDE = "#4F8060"
-    VERDE_CLARO = "#E6F0E9"
-    FONDO = "#F7F6F1"
+    VERDE = "#4F7F5F"
+    VERDE_CLARO = "#EAF4ED"
+    FONDO = "#F5F3ED"
     BLANCO = "#FFFFFF"
-    TEXTO = "#26352D"
-    GRIS = "#789087"
-    NARANJA = "#F07822"
+    TEXTO = "#222222"
+    GRIS = "#777777"
+    NARANJA = "#F27B21"
 
     # Limpiar el contenido anterior del frame
     for widget in parent.winfo_children():
@@ -30,6 +31,7 @@ def voluntarios(parent):
     parent.configure(bg=FONDO)
 
     voluntarios_data = []
+    personas_data = []
     busqueda = tk.StringVar()
 
     # ==========================================
@@ -57,6 +59,37 @@ def voluntarios(parent):
 
         voluntarios_data = datos
         actualizar_tabla()
+
+    def obtener_personas():
+        nonlocal personas_data
+
+        try:
+            respuesta = requests.get(PERSONAS_URL, timeout=5)
+            respuesta.raise_for_status()
+            personas_data = respuesta.json()
+        except requests.RequestException as error:
+            messagebox.showerror(
+                "Error de conexiÃ³n",
+                f"No se pudieron cargar las personas.\n\n{error}"
+            )
+            personas_data = []
+
+    def nombre_persona(id_persona):
+        persona = next(
+            (
+                p for p in personas_data
+                if str(p.get("id_persona")) == str(id_persona)
+            ),
+            None
+        )
+
+        if not persona:
+            return f"ID {id_persona}" if id_persona else "Sin persona"
+
+        return (
+            f"{persona.get('nombre', '')} "
+            f"{persona.get('apellido', '')}"
+        ).strip()
 
     # ==========================================
     # ENCABEZADO
@@ -126,6 +159,9 @@ def voluntarios(parent):
             cursor="hand2"
         )
         boton.pack(fill="x", padx=8, pady=2)
+
+    # La navegación la gestiona el menú principal de inicio.py.
+    lateral.destroy()
 
     # ==========================================
     # PANEL DE GESTIÓN
@@ -286,7 +322,7 @@ def voluntarios(parent):
     )
 
     columnas = (
-        "id", "nombre", "rol", "turno",
+        "id", "persona", "rol", "turno",
         "dias", "fecha_ingreso", "estado"
     )
 
@@ -299,7 +335,7 @@ def voluntarios(parent):
 
     encabezados = {
         "id": "#",
-        "nombre": "NOMBRE",
+        "persona": "PERSONA",
         "rol": "ROL",
         "turno": "TURNO",
         "dias": "DÍAS",
@@ -309,7 +345,7 @@ def voluntarios(parent):
 
     anchos = {
         "id": 40,
-        "nombre": 150,
+        "persona": 145,
         "rol": 130,
         "turno": 95,
         "dias": 140,
@@ -406,6 +442,7 @@ def voluntarios(parent):
             v for v in voluntarios_data
             if filtro in str(v.get("nombre", "")).lower()
             or filtro in str(v.get("rol", "")).lower()
+            or filtro in nombre_persona(v.get("id_persona")).lower()
         ]
 
         for indice, v in enumerate(filtrados):
@@ -414,7 +451,7 @@ def voluntarios(parent):
                 "end",
                 values=(
                     v.get("id_voluntario", ""),
-                    v.get("nombre", ""),
+                    nombre_persona(v.get("id_persona")),
                     v.get("rol", ""),
                     v.get("turno", ""),
                     v.get("dias", ""),
@@ -436,7 +473,7 @@ def voluntarios(parent):
         ventana.title(
             "Editar voluntario" if editar else "Agregar voluntario"
         )
-        ventana.geometry("440x570")
+        ventana.geometry("440x640")
         ventana.configure(bg=FONDO)
         ventana.resizable(False, False)
         ventana.transient(parent.winfo_toplevel())
@@ -469,6 +506,9 @@ def voluntarios(parent):
                 if editar else ""
             )
 
+            if clave == "id_persona" and valor:
+                valor = f"{valor} - {nombre_persona(valor)}"
+
             if opciones:
                 campo = ttk.Combobox(
                     formulario,
@@ -489,7 +529,13 @@ def voluntarios(parent):
             campo.pack(fill="x", ipady=5)
             campos[clave] = campo
 
-        crear_campo("Nombre completo", "nombre")
+        valores_personas = [
+            f"{p.get('id_persona')} - "
+            f"{p.get('nombre', '')} {p.get('apellido', '')}".strip()
+            for p in personas_data
+        ]
+
+        crear_campo("Persona", "id_persona", valores_personas)
         crear_campo(
             "Rol", "rol",
             [
@@ -519,6 +565,30 @@ def voluntarios(parent):
                 clave: campo.get().strip()
                 for clave, campo in campos.items()
             }
+
+            persona_seleccionada = datos.get("id_persona", "")
+
+            if not persona_seleccionada:
+                messagebox.showwarning(
+                    "Persona obligatoria",
+                    "SeleccionÃ¡ la persona relacionada.",
+                    parent=ventana
+                )
+                return
+
+            try:
+                datos["id_persona"] = int(
+                    persona_seleccionada.split(" - ", 1)[0]
+                )
+            except (ValueError, IndexError):
+                messagebox.showerror(
+                    "Persona invÃ¡lida",
+                    "SeleccionÃ¡ una persona vÃ¡lida.",
+                    parent=ventana
+                )
+                return
+
+            datos["nombre"] = nombre_persona(datos["id_persona"])
 
             if any(not valor for valor in datos.values()):
                 messagebox.showwarning(
@@ -660,7 +730,12 @@ def voluntarios(parent):
     # BOTONES DE ACCIÓN
     # ==========================================
     acciones = tk.Frame(panel, bg=FONDO)
-    acciones.pack(fill="x", padx=25, pady=(0, 15))
+    acciones.pack(
+        fill="x",
+        padx=25,
+        pady=(0, 15),
+        before=marco_tabla
+    )
 
     tk.Button(
         acciones,
@@ -687,6 +762,9 @@ def voluntarios(parent):
         padx=12,
         pady=8
     ).pack(side="left")
+
+    # Cargar personas antes de abrir formularios de voluntarios.
+    obtener_personas()
 
     # Cargar los voluntarios al abrir la pantalla
     cargar_datos()
