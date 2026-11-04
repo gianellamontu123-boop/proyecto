@@ -8,6 +8,9 @@ API_URL = "http://localhost:3000/api/personas"
 
 def crear_personas(parent):
 
+    # ==============================
+    # COLORES
+    # ==============================
     FONDO = "#F5F3ED"
     BLANCO = "#FFFFFF"
     VERDE = "#4F7F5F"
@@ -21,6 +24,9 @@ def crear_personas(parent):
     frame = tk.Frame(parent, bg=FONDO)
     frame.pack(fill="both", expand=True)
 
+    # ==============================
+    # ENCABEZADO
+    # ==============================
     encabezado = tk.Frame(frame, bg=BLANCO, height=58)
     encabezado.pack(fill="x")
     encabezado.pack_propagate(False)
@@ -48,9 +54,15 @@ def crear_personas(parent):
     )
     boton_nuevo.pack(side="right", padx=20, pady=9)
 
+    # ==============================
+    # CONTENIDO PRINCIPAL
+    # ==============================
     contenido = tk.Frame(frame, bg=FONDO)
     contenido.pack(fill="both", expand=True, padx=22, pady=22)
 
+    # ==============================
+    # FORMULARIO
+    # ==============================
     formulario = tk.Frame(
         contenido,
         bg=BLANCO,
@@ -70,12 +82,14 @@ def crear_personas(parent):
     ).pack(anchor="w", padx=18, pady=(18, 14))
 
     id_actual = tk.StringVar()
+
+    # Los nombres coinciden con las columnas de la base de datos
     campos = {
         "nombre": tk.StringVar(),
         "apellido": tk.StringVar(),
         "dni": tk.StringVar(),
         "telefono": tk.StringVar(),
-        "email": tk.StringVar(),
+        "correo_electronico": tk.StringVar(),
         "direccion": tk.StringVar()
     }
 
@@ -103,7 +117,7 @@ def crear_personas(parent):
         ("Apellido", "apellido"),
         ("DNI", "dni"),
         ("Teléfono", "telefono"),
-        ("Email", "email"),
+        ("Correo electrónico", "correo_electronico"),
         ("Dirección", "direccion")
     ]:
         crear_campo(etiqueta, clave)
@@ -121,6 +135,9 @@ def crear_personas(parent):
     acciones = tk.Frame(formulario, bg=BLANCO)
     acciones.pack(side="bottom", fill="x", padx=18, pady=18)
 
+    # ==============================
+    # TABLA DE PERSONAS
+    # ==============================
     tabla_panel = tk.Frame(
         contenido,
         bg=BLANCO,
@@ -155,15 +172,13 @@ def crear_personas(parent):
     tabla_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
 
     columnas = (
-        "id_persona", "nombre", "apellido", "dni",
-        "telefono", "email", "direccion"
-    )
-
-    tabla = ttk.Treeview(
-        tabla_frame,
-        columns=columnas,
-        show="headings",
-        selectmode="browse"
+        "id_persona",
+        "nombre",
+        "apellido",
+        "dni",
+        "telefono",
+        "correo_electronico",
+        "direccion"
     )
 
     encabezados = {
@@ -172,7 +187,7 @@ def crear_personas(parent):
         "apellido": "APELLIDO",
         "dni": "DNI",
         "telefono": "TELÉFONO",
-        "email": "EMAIL",
+        "correo_electronico": "CORREO ELECTRÓNICO",
         "direccion": "DIRECCIÓN"
     }
 
@@ -182,16 +197,32 @@ def crear_personas(parent):
         "apellido": 110,
         "dni": 90,
         "telefono": 100,
-        "email": 170,
+        "correo_electronico": 190,
         "direccion": 150
     }
 
+    tabla = ttk.Treeview(
+        tabla_frame,
+        columns=columnas,
+        show="headings",
+        selectmode="browse"
+    )
+
     for columna in columnas:
         tabla.heading(columna, text=encabezados[columna])
-        tabla.column(columna, width=anchos[columna], minwidth=45, anchor="w")
+        tabla.column(
+            columna,
+            width=anchos[columna],
+            minwidth=45,
+            anchor="w"
+        )
 
+    # ==============================
+    # ESTILO DE LA TABLA
+    # ==============================
     estilo = ttk.Style()
     estilo.theme_use("clam")
+
     estilo.configure(
         "Treeview",
         background=BLANCO,
@@ -200,6 +231,7 @@ def crear_personas(parent):
         rowheight=36,
         font=("Arial", 9)
     )
+
     estilo.configure(
         "Treeview.Heading",
         background=FONDO,
@@ -207,6 +239,7 @@ def crear_personas(parent):
         font=("Arial", 9, "bold"),
         padding=8
     )
+
     estilo.map(
         "Treeview",
         background=[("selected", VERDE_CLARO)],
@@ -218,23 +251,42 @@ def crear_personas(parent):
         orient="vertical",
         command=tabla.yview
     )
+
     tabla.configure(yscrollcommand=scrollbar.set)
+
     tabla.grid(row=0, column=0, sticky="nsew")
     scrollbar.grid(row=0, column=1, sticky="ns")
+
     tabla_frame.grid_rowconfigure(0, weight=1)
     tabla_frame.grid_columnconfigure(0, weight=1)
 
+    # ==============================
+    # LIMPIAR FORMULARIO
+    # ==============================
     def limpiar_formulario():
         id_actual.set("")
+
         for variable in campos.values():
             variable.set("")
 
+        tabla.selection_remove(tabla.selection())
+
+    # ==============================
+    # OBTENER PERSONA SELECCIONADA
+    # ==============================
     def persona_seleccionada():
         seleccion = tabla.selection()
+
         if not seleccion:
             return None
 
-        id_persona = tabla.item(seleccion[0], "values")[0]
+        valores = tabla.item(seleccion[0], "values")
+
+        if not valores:
+            return None
+
+        id_persona = valores[0]
+
         return next(
             (
                 persona for persona in personas_data
@@ -243,36 +295,80 @@ def crear_personas(parent):
             None
         )
 
+    # ==============================
+    # CARGAR DATOS EN EL FORMULARIO
+    # ==============================
     def cargar_formulario(persona):
-        id_actual.set(f"ID: {persona.get('id_persona', '')}")
-        for clave, variable in campos.items():
-            variable.set(persona.get(clave, ""))
+        if not persona:
+            return
 
+        id_actual.set(f"ID: {persona.get('id_persona', '')}")
+
+        for clave, variable in campos.items():
+            valor = persona.get(clave, "")
+            variable.set("" if valor is None else str(valor))
+
+    # ==============================
+    # ACTUALIZAR TABLA Y BUSCAR
+    # ==============================
     def actualizar_tabla(*_args):
         filtro = buscar.get().strip().lower()
+
         tabla.delete(*tabla.get_children())
 
         for persona in personas_data:
-            valores = tuple(persona.get(clave, "") for clave in columnas)
-            if filtro and filtro not in " ".join(map(str, valores)).lower():
+            valores = tuple(
+                persona.get(clave, "") or ""
+                for clave in columnas
+            )
+
+            texto_persona = " ".join(map(str, valores)).lower()
+
+            if filtro and filtro not in texto_persona:
                 continue
+
             tabla.insert("", "end", values=valores)
 
+    # ==============================
+    # LISTAR PERSONAS DESDE LA API
+    # ==============================
     def cargar_personas():
         nonlocal personas_data
+
         try:
             respuesta = requests.get(API_URL, timeout=5)
             respuesta.raise_for_status()
-            personas_data = respuesta.json()
+
+            datos = respuesta.json()
+
+            # Admite tanto una lista directa como {"personas": [...]}
+            if isinstance(datos, list):
+                personas_data = datos
+            elif isinstance(datos, dict) and isinstance(
+                datos.get("personas"), list
+            ):
+                personas_data = datos["personas"]
+            else:
+                raise ValueError(
+                    "La API no devolvió una lista de personas válida."
+                )
+
             actualizar_tabla()
-        except requests.RequestException as error:
+
+        except (requests.RequestException, ValueError) as error:
             messagebox.showerror(
                 "Error de conexión",
                 f"No se pudieron cargar las personas.\n\n{error}"
             )
 
+    # ==============================
+    # AGREGAR O EDITAR PERSONA
+    # ==============================
     def guardar_persona():
-        datos = {clave: variable.get().strip() for clave, variable in campos.items()}
+        datos = {
+            clave: variable.get().strip()
+            for clave, variable in campos.items()
+        }
 
         if any(not valor for valor in datos.values()):
             messagebox.showwarning(
@@ -283,6 +379,7 @@ def crear_personas(parent):
 
         try:
             id_persona = id_actual.get().replace("ID: ", "").strip()
+
             if id_persona:
                 respuesta = requests.put(
                     f"{API_URL}/{id_persona}",
@@ -290,18 +387,40 @@ def crear_personas(parent):
                     timeout=5
                 )
             else:
-                respuesta = requests.post(API_URL, json=datos, timeout=5)
+                respuesta = requests.post(
+                    API_URL,
+                    json=datos,
+                    timeout=5
+                )
 
             respuesta.raise_for_status()
-            messagebox.showinfo("Correcto", "Persona guardada correctamente.")
+
+            messagebox.showinfo(
+                "Correcto",
+                "Persona guardada correctamente."
+            )
+
             limpiar_formulario()
             cargar_personas()
-        except requests.RequestException as error:
-            detalle = getattr(error.response, "text", str(error))
-            messagebox.showerror("Error", f"No se pudo guardar la persona.\n{detalle}")
 
+        except requests.RequestException as error:
+            detalle = (
+                error.response.text
+                if error.response is not None
+                else str(error)
+            )
+
+            messagebox.showerror(
+                "Error",
+                f"No se pudo guardar la persona.\n\n{detalle}"
+            )
+
+    # ==============================
+    # ELIMINAR PERSONA
+    # ==============================
     def eliminar_persona():
         persona = persona_seleccionada()
+
         if not persona:
             messagebox.showwarning(
                 "Seleccionar persona",
@@ -309,10 +428,17 @@ def crear_personas(parent):
             )
             return
 
-        if not messagebox.askyesno(
+        nombre_completo = (
+            f"{persona.get('nombre', '')} "
+            f"{persona.get('apellido', '')}"
+        ).strip()
+
+        confirmar = messagebox.askyesno(
             "Confirmar eliminación",
-            f"¿Querés eliminar a {persona.get('nombre', '')} {persona.get('apellido', '')}?"
-        ):
+            f"¿Querés eliminar a {nombre_completo}?"
+        )
+
+        if not confirmar:
             return
 
         try:
@@ -320,20 +446,48 @@ def crear_personas(parent):
                 f"{API_URL}/{persona['id_persona']}",
                 timeout=5
             )
+
             respuesta.raise_for_status()
-            messagebox.showinfo("Correcto", "Persona eliminada correctamente.")
+
+            messagebox.showinfo(
+                "Correcto",
+                "Persona eliminada correctamente."
+            )
+
             limpiar_formulario()
             cargar_personas()
-        except requests.RequestException as error:
-            detalle = getattr(error.response, "text", str(error))
-            messagebox.showerror("Error", f"No se pudo eliminar la persona.\n{detalle}")
 
-    tabla.bind("<<TreeviewSelect>>", lambda _event: (
-        cargar_formulario(persona_seleccionada())
-        if persona_seleccionada() else None
-    ))
+        except requests.RequestException as error:
+            detalle = (
+                error.response.text
+                if error.response is not None
+                else str(error)
+            )
+
+            messagebox.showerror(
+                "Error",
+                f"No se pudo eliminar la persona.\n\n{detalle}"
+            )
+
+    # ==============================
+    # EVENTOS DE LA TABLA Y BÚSQUEDA
+    # ==============================
+    def al_seleccionar_persona(_event=None):
+        persona = persona_seleccionada()
+
+        if persona:
+            cargar_formulario(persona)
+
+    tabla.bind(
+        "<<TreeviewSelect>>",
+        al_seleccionar_persona
+    )
+
     buscar.trace_add("write", actualizar_tabla)
 
+    # ==============================
+    # BOTONES
+    # ==============================
     tk.Button(
         acciones,
         text="Guardar",
@@ -341,6 +495,7 @@ def crear_personas(parent):
         bg=VERDE,
         fg=BLANCO,
         activebackground=VERDE_OSCURO,
+        activeforeground=BLANCO,
         relief="flat",
         cursor="hand2",
         pady=8,
@@ -354,6 +509,7 @@ def crear_personas(parent):
         bg=ROJO,
         fg=BLANCO,
         activebackground="#A94444",
+        activeforeground=BLANCO,
         relief="flat",
         cursor="hand2",
         pady=8,
@@ -373,6 +529,8 @@ def crear_personas(parent):
     ).pack(fill="x")
 
     boton_nuevo.config(command=limpiar_formulario)
+
+    # Cargar los datos al abrir la pantalla
     cargar_personas()
 
     return frame

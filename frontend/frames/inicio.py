@@ -7,6 +7,7 @@ from frames.adopciones import crear_adopciones
 from frames.donaciones import crear_donaciones
 from frames.voluntarios import voluntarios
 from frames.personas import crear_personas
+from frames.reportes import crear_reportes
 
 
 # ==========================================
@@ -115,7 +116,7 @@ def crear_inicio(parent):
         "Donaciones": crear_donaciones,
         "Voluntarios": voluntarios,
         "Personas": crear_personas,
-        "Reportes": None,
+        "Reportes": crear_reportes,
         "Ayuda": None
     }
 

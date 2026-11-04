@@ -3,26 +3,44 @@ const pool = require("../bd/conexion");
 
 const router = express.Router();
 
+// ==========================================
+// CAMPOS DE LA TABLA PERSONAS
+// ==========================================
 const CAMPOS = [
     "nombre",
     "apellido",
     "dni",
     "telefono",
-    "email",
+    "correo_electronico",
     "direccion"
 ];
 
+// ==========================================
+// OBTENER Y LIMPIAR DATOS DE UNA PERSONA
+// ==========================================
 function datosPersona(body) {
     return CAMPOS.map((campo) => {
         const valor = body[campo];
-        return typeof valor === "string" ? valor.trim() : valor ?? "";
+
+        return typeof valor === "string"
+            ? valor.trim()
+            : valor ?? "";
     });
 }
 
+// ==========================================
+// VALIDAR DATOS OBLIGATORIOS
+// ==========================================
 function datosValidos(datos) {
-    return datos.every((valor) => String(valor).trim() !== "");
+    return datos.every(
+        (valor) => String(valor).trim() !== ""
+    );
 }
 
+// ==========================================
+// AGREGAR UNA PERSONA
+// POST /api/personas
+// ==========================================
 router.post("/", async (req, res) => {
     const datos = datosPersona(req.body);
 
@@ -35,7 +53,14 @@ router.post("/", async (req, res) => {
     try {
         const [resultado] = await pool.execute(
             `INSERT INTO personas
-            (nombre, apellido, dni, telefono, email, direccion)
+            (
+                nombre,
+                apellido,
+                dni,
+                telefono,
+                correo_electronico,
+                direccion
+            )
             VALUES (?, ?, ?, ?, ?, ?)`,
             datos
         );
@@ -44,6 +69,7 @@ router.post("/", async (req, res) => {
             id_persona: resultado.insertId,
             mensaje: "Persona creada correctamente"
         });
+
     } catch (error) {
         return res.status(500).json({
             error: "No se pudo crear la persona",
@@ -52,15 +78,27 @@ router.post("/", async (req, res) => {
     }
 });
 
+// ==========================================
+// LISTAR TODAS LAS PERSONAS
+// GET /api/personas
+// ==========================================
 router.get("/", async (_req, res) => {
     try {
         const [personas] = await pool.execute(
-            `SELECT id_persona, nombre, apellido, dni, telefono, email, direccion
+            `SELECT
+                id_persona,
+                nombre,
+                apellido,
+                dni,
+                telefono,
+                correo_electronico,
+                direccion
              FROM personas
              ORDER BY id_persona DESC`
         );
 
         return res.status(200).json(personas);
+
     } catch (error) {
         return res.status(500).json({
             error: "No se pudieron obtener las personas",
@@ -69,20 +107,34 @@ router.get("/", async (_req, res) => {
     }
 });
 
+// ==========================================
+// CONSULTAR UNA PERSONA POR ID
+// GET /api/personas/:id
+// ==========================================
 router.get("/:id", async (req, res) => {
     try {
         const [personas] = await pool.execute(
-            `SELECT id_persona, nombre, apellido, dni, telefono, email, direccion
+            `SELECT
+                id_persona,
+                nombre,
+                apellido,
+                dni,
+                telefono,
+                correo_electronico,
+                direccion
              FROM personas
              WHERE id_persona = ?`,
             [req.params.id]
         );
 
         if (personas.length === 0) {
-            return res.status(404).json({ error: "Persona no encontrada" });
+            return res.status(404).json({
+                error: "Persona no encontrada"
+            });
         }
 
         return res.status(200).json(personas[0]);
+
     } catch (error) {
         return res.status(500).json({
             error: "No se pudo obtener la persona",
@@ -91,6 +143,10 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// ==========================================
+// ACTUALIZAR UNA PERSONA
+// PUT /api/personas/:id
+// ==========================================
 router.put("/:id", async (req, res) => {
     const datos = datosPersona(req.body);
 
@@ -103,19 +159,27 @@ router.put("/:id", async (req, res) => {
     try {
         const [resultado] = await pool.execute(
             `UPDATE personas
-             SET nombre = ?, apellido = ?, dni = ?, telefono = ?,
-                 email = ?, direccion = ?
+             SET
+                nombre = ?,
+                apellido = ?,
+                dni = ?,
+                telefono = ?,
+                correo_electronico = ?,
+                direccion = ?
              WHERE id_persona = ?`,
             [...datos, req.params.id]
         );
 
         if (resultado.affectedRows === 0) {
-            return res.status(404).json({ error: "Persona no encontrada" });
+            return res.status(404).json({
+                error: "Persona no encontrada"
+            });
         }
 
         return res.status(200).json({
             mensaje: "Persona actualizada correctamente"
         });
+
     } catch (error) {
         return res.status(500).json({
             error: "No se pudo actualizar la persona",
@@ -124,20 +188,28 @@ router.put("/:id", async (req, res) => {
     }
 });
 
+// ==========================================
+// ELIMINAR UNA PERSONA
+// DELETE /api/personas/:id
+// ==========================================
 router.delete("/:id", async (req, res) => {
     try {
         const [resultado] = await pool.execute(
-            "DELETE FROM personas WHERE id_persona = ?",
+            `DELETE FROM personas
+             WHERE id_persona = ?`,
             [req.params.id]
         );
 
         if (resultado.affectedRows === 0) {
-            return res.status(404).json({ error: "Persona no encontrada" });
+            return res.status(404).json({
+                error: "Persona no encontrada"
+            });
         }
 
         return res.status(200).json({
             mensaje: "Persona eliminada correctamente"
         });
+
     } catch (error) {
         return res.status(409).json({
             error: "No se pudo eliminar la persona. Puede estar relacionada con adopciones o donaciones.",
@@ -146,4 +218,7 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
+// ==========================================
+// EXPORTAR RUTAS
+// ==========================================
 module.exports = router;

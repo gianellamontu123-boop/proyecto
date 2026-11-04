@@ -6,6 +6,7 @@ const ADOPCIONESRouter = require("./rutas/adopciones")
 const donacionesRouter = require("./rutas/donaciones")
 const voluntariosRouter = require("./rutas/voluntarios")
 const personasRouter = require("./rutas/personas")
+const reportesRouter = require("./rutas/reportes")
 
 
 const app=express();
@@ -19,6 +20,7 @@ app.use("/api/adopciones", ADOPCIONESRouter)
 app.use("/api/donaciones", donacionesRouter)
 app.use("/api/voluntarios", voluntariosRouter)
 app.use("/api/personas", personasRouter)
+app.use("/api/reportes", reportesRouter)
 
 async function probarconexion(){
     try {
