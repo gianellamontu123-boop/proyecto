@@ -1,3 +1,4 @@
+
 const express = require("express");
 const pool = require("../bd/conexion");
 
@@ -15,9 +16,7 @@ const CAMPOS = [
     "direccion"
 ];
 
-// ==========================================
-// OBTENER Y LIMPIAR DATOS DE UNA PERSONA
-// ==========================================
+// Obtener y limpiar los datos de una persona
 function datosPersona(body) {
     return CAMPOS.map((campo) => {
         const valor = body[campo];
@@ -28,19 +27,16 @@ function datosPersona(body) {
     });
 }
 
-// ==========================================
-// VALIDAR DATOS OBLIGATORIOS
-// ==========================================
+// Validar que todos los campos estén completos
 function datosValidos(datos) {
     return datos.every(
         (valor) => String(valor).trim() !== ""
     );
 }
 
-// ==========================================
-// AGREGAR UNA PERSONA
-// POST /api/personas
-// ==========================================
+// =============================
+// CREAR UNA PERSONA
+// =============================
 router.post("/", async (req, res) => {
     const datos = datosPersona(req.body);
 
@@ -53,14 +49,7 @@ router.post("/", async (req, res) => {
     try {
         const [resultado] = await pool.execute(
             `INSERT INTO personas
-            (
-                nombre,
-                apellido,
-                dni,
-                telefono,
-                correo_electronico,
-                direccion
-            )
+            (nombre, apellido, dni, telefono, correo_electronico, direccion)
             VALUES (?, ?, ?, ?, ?, ?)`,
             datos
         );
@@ -78,21 +67,14 @@ router.post("/", async (req, res) => {
     }
 });
 
-// ==========================================
+// =============================
 // LISTAR TODAS LAS PERSONAS
-// GET /api/personas
-// ==========================================
-router.get("/", async (_req, res) => {
+// =============================
+router.get("/", async (req, res) => {
     try {
         const [personas] = await pool.execute(
-            `SELECT
-                id_persona,
-                nombre,
-                apellido,
-                dni,
-                telefono,
-                correo_electronico,
-                direccion
+            `SELECT id_persona, nombre, apellido, dni, telefono,
+                    correo_electronico, direccion
              FROM personas
              ORDER BY id_persona DESC`
         );
@@ -100,6 +82,7 @@ router.get("/", async (_req, res) => {
         return res.status(200).json(personas);
 
     } catch (error) {
+        console.error("ERROR AL CARGAR PERSONAS:", error);
         return res.status(500).json({
             error: "No se pudieron obtener las personas",
             detalle: error.message
@@ -107,21 +90,14 @@ router.get("/", async (_req, res) => {
     }
 });
 
-// ==========================================
-// CONSULTAR UNA PERSONA POR ID
-// GET /api/personas/:id
-// ==========================================
+// =============================
+// BUSCAR UNA PERSONA POR ID
+// =============================
 router.get("/:id", async (req, res) => {
     try {
         const [personas] = await pool.execute(
-            `SELECT
-                id_persona,
-                nombre,
-                apellido,
-                dni,
-                telefono,
-                correo_electronico,
-                direccion
+            `SELECT id_persona, nombre, apellido, dni, telefono,
+                    correo_electronico, direccion
              FROM personas
              WHERE id_persona = ?`,
             [req.params.id]
@@ -143,10 +119,9 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// ==========================================
+// =============================
 // ACTUALIZAR UNA PERSONA
-// PUT /api/personas/:id
-// ==========================================
+// =============================
 router.put("/:id", async (req, res) => {
     const datos = datosPersona(req.body);
 
@@ -159,13 +134,8 @@ router.put("/:id", async (req, res) => {
     try {
         const [resultado] = await pool.execute(
             `UPDATE personas
-             SET
-                nombre = ?,
-                apellido = ?,
-                dni = ?,
-                telefono = ?,
-                correo_electronico = ?,
-                direccion = ?
+             SET nombre = ?, apellido = ?, dni = ?, telefono = ?,
+                 correo_electronico = ?, direccion = ?
              WHERE id_persona = ?`,
             [...datos, req.params.id]
         );
@@ -188,10 +158,9 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-// ==========================================
+// =============================
 // ELIMINAR UNA PERSONA
-// DELETE /api/personas/:id
-// ==========================================
+// =============================
 router.delete("/:id", async (req, res) => {
     try {
         const [resultado] = await pool.execute(
