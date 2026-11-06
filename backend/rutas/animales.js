@@ -3,10 +3,29 @@ const pool = require('../bd/conexion');
 const router = express.Router();
 
 // =============================
+// VALIDAR FECHA DE NACIMIENTO
+// =============================
+function fechaNacimientoValida(fecha) {
+    if (!fecha) return false;
+
+    const nacimiento = new Date(fecha + 'T00:00:00');
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    return !isNaN(nacimiento.getTime()) && nacimiento <= hoy;
+}
+
+// =============================
 // AGREGAR UN ANIMAL
 // =============================
 router.post('/', async (req, res) => {
     const { nombre, especie, raza, sexo, fecha_nacimiento, estado_actual } = req.body;
+
+    if (!fechaNacimientoValida(fecha_nacimiento)) {
+    return res.status(400).json({
+        error: 'La fecha de nacimiento no puede ser futura o inválida'
+    });
+}
 
     try {
         await pool.execute(
@@ -80,6 +99,12 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { nombre, especie, raza, sexo, fecha_nacimiento, estado_actual } = req.body;
 
+    if (!fechaNacimientoValida(fecha_nacimiento)) {
+        return res.status(400).json({
+            error: 'La fecha de nacimiento no puede ser futura o inválida'
+        });
+    }
+    
     try {
         const [resultado] = await pool.execute(
             `UPDATE animales 
