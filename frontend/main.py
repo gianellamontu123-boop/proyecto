@@ -306,27 +306,8 @@ boton_ojo.pack(side="right", padx=8)
 fila_opciones = tk.Frame(tarjeta, bg=BLANCO)
 fila_opciones.pack(fill="x", padx=38, pady=(0, 16))
 
-recordarme = tk.BooleanVar(value=False)
 
-tk.Checkbutton(
-    fila_opciones,
-    text="Recordarme",
-    variable=recordarme,
-    font=("Arial", 10),
-    bg=BLANCO,
-    fg=GRIS,
-    activebackground=BLANCO,
-    selectcolor=BLANCO
-).pack(side="left")
 
-tk.Label(
-    fila_opciones,
-    text="¿Olvidaste tu contraseña?",
-    font=("Arial", 9, "bold"),
-    bg=BLANCO,
-    fg=VERDE_OSCURO,
-    cursor="hand2"
-).pack(side="right")
 
 
 # ==========================================

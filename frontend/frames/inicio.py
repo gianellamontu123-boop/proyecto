@@ -1,6 +1,7 @@
 
 import tkinter as tk
 from tkinter import messagebox
+import requests
 
 from frames.animales import crear_animales
 from frames.adopciones import crear_adopciones
@@ -29,16 +30,32 @@ GRIS = "#777777"
 GRIS_CLARO = "#E5E5E0"
 NEGRO = "#222222"
 
+API_REPORTES = "http://localhost:3000/api/reportes"
+
+
+def obtener_datos(ruta):
+    try:
+        respuesta = requests.get(
+            f"{API_REPORTES}/{ruta}",
+            timeout=5
+        )
+        respuesta.raise_for_status()
+        return respuesta.json()
+
+    except requests.exceptions.RequestException as error:
+        messagebox.showerror(
+            "Error de conexión",
+            f"No se pudieron obtener los datos.\n\n{error}"
+        )
+        return None
+
 
 def crear_inicio(parent):
 
-    # ==========================================
-    # FRAME PRINCIPAL
-    # ==========================================
     frame = tk.Frame(parent, bg=FONDO)
 
     # ==========================================
-    # BARRA LATERAL: SE CREA UNA SOLA VEZ
+    # BARRA LATERAL
     # ==========================================
     sidebar = tk.Frame(
         frame,
@@ -76,7 +93,6 @@ def crear_inicio(parent):
     contenido = tk.Frame(frame, bg=FONDO)
     contenido.pack(side="left", fill="both", expand=True)
 
-    # Barra superior permanente
     barra_superior = tk.Frame(
         contenido,
         bg=BLANCO,
@@ -102,13 +118,9 @@ def crear_inicio(parent):
         fg=VERDE
     ).pack(side="right", padx=20)
 
-    # ==========================================
-    # ÁREA ÚNICA PARA CAMBIAR LAS VISTAS
-    # ==========================================
     area_vistas = tk.Frame(contenido, bg=FONDO)
     area_vistas.pack(fill="both", expand=True)
 
-    # Diccionario de vistas existentes
     vistas = {
         "Inicio": None,
         "Animales": crear_animales,
@@ -123,32 +135,26 @@ def crear_inicio(parent):
     botones_menu = {}
 
     # ==========================================
-    # CAMBIAR CONTENIDO SIN BORRAR EL MENÚ
+    # CAMBIAR VISTAS
     # ==========================================
     def mostrar_frame(nombre):
 
-        # Borrar solamente la vista central. El menú lateral vive fuera de
-        # `area_vistas`, por lo que nunca se destruye al cambiar de sección.
         for widget in area_vistas.winfo_children():
             widget.destroy()
 
         titulo_pagina.config(text=nombre)
 
-        # Actualizar el botón seleccionado.
         for texto, boton in botones_menu.items():
-            if texto == nombre:
-                boton.config(bg=VERDE_SELECCION)
-            else:
-                boton.config(bg=VERDE)
+            boton.config(
+                bg=VERDE_SELECCION if texto == nombre else VERDE
+            )
 
         funcion = vistas.get(nombre)
 
-        # Mostrar el dashboard de inicio.
         if nombre == "Inicio":
             mostrar_dashboard(area_vistas)
             return
 
-        # Mostrar una vista todavía no implementada.
         if funcion is None:
             tk.Label(
                 area_vistas,
@@ -160,22 +166,14 @@ def crear_inicio(parent):
             ).pack(expand=True)
             return
 
-        # Cada pantalla recibe su propio contenedor. Esto permite trabajar
-        # con vistas que devuelven un Frame y con vistas que dibujan
-        # directamente sobre el padre (como Voluntarios).
         contenedor_vista = tk.Frame(area_vistas, bg=FONDO)
         contenedor_vista.pack(fill="both", expand=True)
 
         try:
             nuevo_frame = funcion(contenedor_vista)
 
-            # Algunas vistas ya hacen `pack()` internamente. Solo se empaqueta
-            # aquí cuando la vista devuelve un Frame todavía no administrado.
             if nuevo_frame is not None and not nuevo_frame.winfo_manager():
-                nuevo_frame.pack(
-                    fill="both",
-                    expand=True
-                )
+                nuevo_frame.pack(fill="both", expand=True)
 
         except Exception as error:
             messagebox.showerror(
@@ -184,10 +182,11 @@ def crear_inicio(parent):
             )
 
     # ==========================================
-    # BOTONES DEL MENÚ
+    # MENÚ
     # ==========================================
     opciones = [
         ("⌂", "Inicio"),
+        ("P", "Personas"),
         ("♧", "Animales"),
         ("♡", "Adopciones"),
         ("♔", "Donaciones"),
@@ -195,8 +194,6 @@ def crear_inicio(parent):
         ("▤", "Reportes"),
         ("?", "Ayuda")
     ]
-
-    opciones.insert(1, ("P", "Personas"))
 
     for icono, nombre in opciones:
 
@@ -221,7 +218,7 @@ def crear_inicio(parent):
         botones_menu[nombre] = boton
 
     # ==========================================
-    # USUARIO EN LA PARTE INFERIOR
+    # USUARIO
     # ==========================================
     usuario_frame = tk.Frame(sidebar, bg=VERDE)
     usuario_frame.pack(side="bottom", fill="x", padx=15, pady=20)
@@ -254,7 +251,7 @@ def crear_inicio(parent):
     ).pack(anchor="w")
 
     # ==========================================
-    # DASHBOARD DE INICIO
+    # DASHBOARD
     # ==========================================
     def mostrar_dashboard(parent_dashboard):
 
@@ -285,26 +282,46 @@ def crear_inicio(parent):
             fg=GRIS
         ).pack(anchor="w", pady=(4, 20))
 
+        # ======================================
+        # CONSULTAR LAS DOS RUTAS
+        # ======================================
+        datos_animales = obtener_datos("animales-por-estado")
+        datos_adopciones = obtener_datos("adopciones-por-mes")
+
         tarjetas = tk.Frame(dashboard, bg=FONDO)
         tarjetas.pack(fill="x")
 
+        # Cantidades de animales
+        total_animales = (
+            datos_animales.get("total", 0)
+            if datos_animales else 0
+        )
+
+        # Cantidades de adopciones
+        total_adopciones = (
+            datos_adopciones.get("total", 0)
+            if datos_adopciones else 0
+        )
+
+        # Datos para las tarjetas
         datos = [
-            ("♧", "42", "Animales en el refugio", VERDE, VERDE_CLARO),
-            ("♡", "18", "Animales adoptados", NARANJA, NARANJA_CLARO),
-            ("♧", "7", "Adopciones este mes", VERDE, VERDE_CLARO),
-            ("♔", "12", "Donaciones recibidas", "#9B7944", BEIGE_CLARO)
+            ("♧", total_animales, "Animales registrados",
+             VERDE, VERDE_CLARO),
+
+            ("♡", total_adopciones, "Adopciones del año",
+             NARANJA, NARANJA_CLARO)
         ]
 
         for columna, (icono, numero, descripcion, color, fondo_icono) in enumerate(datos):
 
-            tarjeta_dashboard = tk.Frame(
+            tarjeta = tk.Frame(
                 tarjetas,
                 bg=BLANCO,
                 highlightbackground=GRIS_CLARO,
                 highlightthickness=1
             )
 
-            tarjeta_dashboard.grid(
+            tarjeta.grid(
                 row=0,
                 column=columna,
                 sticky="nsew",
@@ -314,7 +331,7 @@ def crear_inicio(parent):
             tarjetas.columnconfigure(columna, weight=1)
 
             tk.Label(
-                tarjeta_dashboard,
+                tarjeta,
                 text=icono,
                 font=("Arial", 21),
                 bg=fondo_icono,
@@ -323,23 +340,163 @@ def crear_inicio(parent):
             ).pack(anchor="w", padx=12, pady=(15, 8))
 
             tk.Label(
-                tarjeta_dashboard,
-                text=numero,
+                tarjeta,
+                text=str(numero),
                 font=("Arial", 24, "bold"),
                 bg=BLANCO,
                 fg=color
             ).pack(anchor="w", padx=12)
 
             tk.Label(
-                tarjeta_dashboard,
+                tarjeta,
                 text=descripcion,
                 font=("Arial", 9),
                 bg=BLANCO,
-                fg=GRIS,
-                wraplength=145,
-                justify="left"
+                fg=GRIS
             ).pack(anchor="w", padx=12, pady=(3, 15))
 
+        # ======================================
+        # ANIMALES POR ESTADO
+        # ======================================
+        seccion_animales = tk.Frame(
+            dashboard,
+            bg=BLANCO,
+            highlightbackground=GRIS_CLARO,
+            highlightthickness=1
+        )
+        seccion_animales.pack(fill="x", pady=(20, 0))
+
+        tk.Label(
+            seccion_animales,
+            text="Animales por estado",
+            font=("Arial", 14, "bold"),
+            bg=BLANCO,
+            fg=NEGRO
+        ).pack(anchor="w", padx=18, pady=(15, 10))
+
+        if datos_animales:
+
+            for item in datos_animales.get("datos", []):
+
+                fila = tk.Frame(seccion_animales, bg=BLANCO)
+                fila.pack(fill="x", padx=20, pady=4)
+
+                tk.Label(
+                    fila,
+                    text=item["estado"],
+                    font=("Arial", 10),
+                    bg=BLANCO,
+                    fg=GRIS,
+                    width=20,
+                    anchor="w"
+                ).pack(side="left")
+
+                tk.Label(
+                    fila,
+                    text=str(item["cantidad"]),
+                    font=("Arial", 10, "bold"),
+                    bg=BLANCO,
+                    fg=VERDE_OSCURO
+                ).pack(side="right")
+
+        else:
+            tk.Label(
+                seccion_animales,
+                text="No se pudieron cargar los datos.",
+                bg=BLANCO,
+                fg=GRIS
+            ).pack(pady=10)
+
+        # ======================================
+        # ADOPCIONES POR MES CON SCROLL
+        # ======================================
+        seccion_adopciones = tk.Frame(
+            dashboard,
+            bg=BLANCO,
+            highlightbackground=GRIS_CLARO,
+            highlightthickness=1
+        )
+        seccion_adopciones.pack(fill="both", expand=True, pady=(15, 0))
+
+        tk.Label(
+            seccion_adopciones,
+            text="Adopciones por mes",
+            font=("Arial", 14, "bold"),
+            bg=BLANCO,
+            fg=NEGRO
+        ).pack(anchor="w", padx=18, pady=(15, 10))
+
+        # Contenedor del scroll
+        contenedor_scroll = tk.Frame(seccion_adopciones, bg=BLANCO)
+        contenedor_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+        canvas = tk.Canvas(
+            contenedor_scroll,
+            bg=BLANCO,
+            highlightthickness=0
+        )
+
+        scrollbar = tk.Scrollbar(
+            contenedor_scroll,
+            orient="vertical",
+            command=canvas.yview
+        )
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        contenido_scroll = tk.Frame(canvas, bg=BLANCO)
+
+        ventana_scroll = canvas.create_window(
+            (0, 0),
+            window=contenido_scroll,
+            anchor="nw"
+        )
+
+        def actualizar_scroll(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def ajustar_ancho(event):
+            canvas.itemconfig(ventana_scroll, width=event.width)
+
+        contenido_scroll.bind("<Configure>", actualizar_scroll)
+        canvas.bind("<Configure>", ajustar_ancho)
+
+        # Mostrar los 12 meses
+        if datos_adopciones:
+
+            for item in datos_adopciones.get("datos", []):
+
+                fila = tk.Frame(contenido_scroll, bg=BLANCO)
+                fila.pack(fill="x", padx=20, pady=4)
+
+                tk.Label(
+                    fila,
+                    text=item["mes"],
+                    font=("Arial", 9),
+                    bg=BLANCO,
+                    fg=GRIS,
+                    width=20,
+                    anchor="w"
+                ).pack(side="left")
+
+                tk.Label(
+                    fila,
+                    text=str(item["cantidad"]),
+                    font=("Arial", 9, "bold"),
+                    bg=BLANCO,
+                    fg=NARANJA
+                ).pack(side="right")
+
+        else:
+            tk.Label(
+                contenido_scroll,
+                text="No se pudieron cargar los datos.",
+                bg=BLANCO,
+                fg=GRIS
+            ).pack(pady=10)
         # ======================================
         # ACCESOS RÁPIDOS
         # ======================================
@@ -349,7 +506,7 @@ def crear_inicio(parent):
             highlightbackground=GRIS_CLARO,
             highlightthickness=1
         )
-        accesos.pack(fill="x", pady=(25, 0))
+        accesos.pack(fill="x", pady=(20, 0))
 
         tk.Label(
             accesos,
@@ -357,10 +514,10 @@ def crear_inicio(parent):
             font=("Arial", 14, "bold"),
             bg=BLANCO,
             fg=NEGRO
-        ).pack(anchor="w", padx=18, pady=(18, 10))
+        ).pack(anchor="w", padx=18, pady=(15, 10))
 
         botones_rapidos = tk.Frame(accesos, bg=BLANCO)
-        botones_rapidos.pack(fill="x", padx=13, pady=(0, 18))
+        botones_rapidos.pack(fill="x", padx=13, pady=(0, 15))
 
         accesos_disponibles = [
             ("Registrar animal", "Animales"),
@@ -375,9 +532,9 @@ def crear_inicio(parent):
                 botones_rapidos,
                 text=texto,
                 font=("Arial", 10, "bold"),
-                bg=VERDE_CLARO,
+                bg=VERDE,
                 fg=BLANCO,
-                activebackground=VERDE,
+                activebackground=VERDE_OSCURO,
                 activeforeground=BLANCO,
                 relief="flat",
                 cursor="hand2",
@@ -390,7 +547,6 @@ def crear_inicio(parent):
                 ipady=9
             )
 
-        # Aviso
         tk.Label(
             dashboard,
             text="ARCA · Un hogar para cada huella",
@@ -399,7 +555,7 @@ def crear_inicio(parent):
             fg=VERDE
         ).pack(anchor="w", side="bottom", pady=(15, 0))
 
-    # Mostrar el dashboard inicial.
+    # Mostrar inicio
     mostrar_dashboard(area_vistas)
 
     return frame
